@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inverter-mapper-deploy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inverter-mapper
+  template:
+    metadata:
+      labels:
+        app: inverter-mapper
+    spec:
+      containers:
+        - name: inverter-mapper
+          image: 44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry/zim-solar-inverter-mapper:latest
+          env:
+            - name: PROFILE
+              value: "prod"
+          envFrom:
+            - configMapRef:
+                name: zim-converter-mapper-config
+            - secretRef:
+                name: zim-inverter-mapper-credentials
+      imagePullSecrets:
+        - name: ncr

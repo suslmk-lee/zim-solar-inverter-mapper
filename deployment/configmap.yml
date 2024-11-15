@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zim-converter-mapper-config
+data:
+  DB_HOST: "133.186.209.209"
+  DB_PORT: "31763"
+  DB_NAME: "cp-db"
+  MQTT_BROKER: "133.186.209.209"
+  MQTT_TOPIC: "iot/data"
+  MQTT_CLIENT_ID: "client1"
