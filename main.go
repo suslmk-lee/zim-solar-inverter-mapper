@@ -83,7 +83,7 @@ func main() {
 	opts.SetClientID(clientID)
 	opts.SetCleanSession(true)
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("수신한 메시지: %s\n", msg.Payload())
+		log.Printf("수신한 메시지: %s: %s\n", msg.Topic(), msg.Payload())
 
 		var data IoTData
 		err := json.Unmarshal(msg.Payload(), &data)
@@ -163,7 +163,7 @@ func main() {
 	log.Println("MQTT에 성공적으로 연결되었습니다.")
 
 	// 토픽 구독
-	if token := client.Subscribe(mqttTopic, 0, nil); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(mqttTopic, 1, nil); token.Wait() && token.Error() != nil {
 		log.Fatalf("토픽 구독 실패: %v", token.Error())
 	}
 	log.Printf("토픽 '%s'을(를) 구독 중입니다.\n", mqttTopic)
