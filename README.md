@@ -41,3 +41,19 @@ mosquitto_pub -h localhost -p 1883 -t iot/data -m '{
   }
 }'                                                                                              <....
 ```
+
+```shell
+$ helm install my-mosquitto k8s-at-home/mosquitto --version 4.3.1 --set service.main.type=NodePort
+```
+
+```shell
+mosquitto_sub -h 133.186.228.94 -p 30819 -t iot/dat
+```
+
+```shell
+mosquitto_pub -h 133.186.228.94 -p 30819 -t iot/data -m bs
+```
+
+```shell
+kubectl run mosquitto-client --rm -it --image eclipse-mosquitto --namespace default -- /bin/sh
+```
