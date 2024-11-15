@@ -106,6 +106,7 @@ func GetAllowedOrigins() []string {
 func GetMQTTBroker() string {
 	if broker, exists := ConfInfo["MQTTBroker"]; exists {
 		if b, ok := broker.(string); ok {
+			fmt.Println("[Local]broker: ", b)
 			return b
 		}
 	}
