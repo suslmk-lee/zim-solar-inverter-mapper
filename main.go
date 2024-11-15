@@ -155,6 +155,7 @@ func main() {
 
 	// 클라이언트 생성 및 연결
 	client := mqtt.NewClient(opts)
+	fmt.Println("MQTT 연결중...", client.IsConnected())
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("MQTT 연결 실패: %v", token.Error())
 	}

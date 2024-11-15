@@ -30,7 +30,7 @@ ENV PROFILE=prod \
     DB_USER=admin \
     DB_PASSWORD=master \
     DB_NAME=cp-db \
-    MQTT_BROKER=127.0.0.1:1883 \
+    MQTT_BROKER=133.186.209.209:30819 \
     MQTT_TOPIC=iot/data \
     MQTT_CLIENT_ID=client1
 
