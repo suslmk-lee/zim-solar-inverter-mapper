@@ -1,5 +1,3 @@
-// main.go
-
 package main
 
 import (
@@ -15,7 +13,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// IoTData는 수신할 JSON 데이터의 구조체입니다.
 type IoTData struct {
 	Device    string `json:"Device"`
 	Timestamp string `json:"Timestamp"`
@@ -64,6 +61,8 @@ func main() {
 		"password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPassword, dbName)
 
+	fmt.Println(psqlInfo)
+
 	// 데이터베이스 연결
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -92,14 +91,13 @@ func main() {
 			return
 		}
 
-		// 타임스탬프 파싱
 		timestamp, err := time.Parse("2006-01-02 15:04:05", data.Timestamp)
 		if err != nil {
 			log.Printf("타임스탬프 파싱 오류: %v", err)
 			return
 		}
 
-		// 데이터베이스에 삽입
+		// 데이터 인서트
 		query := `
 			INSERT INTO iot_data (
 				device, timestamp, pro_ver, minor_ver, sn, model,

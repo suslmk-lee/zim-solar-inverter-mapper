@@ -1,15 +1,14 @@
-// config/config.go
-
 package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
-// AppConfigProperties는 설정을 저장하는 맵입니다.
 type AppConfigProperties map[string]interface{}
 
 var ConfInfo AppConfigProperties
@@ -31,7 +30,6 @@ func init() {
 	}
 }
 
-// ReadConfigFile은 JSON 파일에서 설정을 읽어 ConfInfo에 저장합니다.
 func ReadConfigFile(filename string) (AppConfigProperties, error) {
 	ConfInfo = AppConfigProperties{}
 
@@ -51,12 +49,12 @@ func ReadConfigFile(filename string) (AppConfigProperties, error) {
 	return ConfInfo, nil
 }
 
-// LoadConfigFromEnv는 프로덕션 모드에서 환경 변수로부터 설정을 로드합니다.
 func LoadConfigFromEnv() AppConfigProperties {
 	conf := AppConfigProperties{}
 
 	// 예시: MQTT 설정
 	if broker := os.Getenv("MQTT_BROKER"); broker != "" {
+		fmt.Println("broker: ", broker)
 		conf["MQTTBroker"] = broker
 	}
 	if topic := os.Getenv("MQTT_TOPIC"); topic != "" {
@@ -71,6 +69,7 @@ func LoadConfigFromEnv() AppConfigProperties {
 		conf["DBHost"] = dbHost
 	}
 	if dbPort := os.Getenv("DB_PORT"); dbPort != "" {
+		fmt.Println("dbPort: ", dbPort)
 		conf["DBPort"] = dbPort
 	}
 	if dbUser := os.Getenv("DB_USER"); dbUser != "" {
@@ -83,12 +82,9 @@ func LoadConfigFromEnv() AppConfigProperties {
 		conf["DBName"] = dbName
 	}
 
-	// 기타 설정 추가 가능
-
 	return conf
 }
 
-// GetAllowedOrigins는 설정에서 AllowedOrigins를 가져옵니다.
 func GetAllowedOrigins() []string {
 	if allowedOriginsInterface, exists := ConfInfo["AllowedOrigins"]; exists {
 		switch v := allowedOriginsInterface.(type) {
@@ -107,7 +103,6 @@ func GetAllowedOrigins() []string {
 	return nil
 }
 
-// GetMQTTBroker는 설정에서 MQTT 브로커 주소를 가져옵니다.
 func GetMQTTBroker() string {
 	if broker, exists := ConfInfo["MQTTBroker"]; exists {
 		if b, ok := broker.(string); ok {
@@ -117,7 +112,6 @@ func GetMQTTBroker() string {
 	return "tcp://localhost:1883" // 기본값
 }
 
-// GetMQTTTopic는 설정에서 MQTT 토픽을 가져옵니다.
 func GetMQTTTopic() string {
 	if topic, exists := ConfInfo["MQTTTopic"]; exists {
 		if t, ok := topic.(string); ok {
@@ -127,7 +121,6 @@ func GetMQTTTopic() string {
 	return "iot/data" // 기본값
 }
 
-// GetMQTTClientID는 설정에서 MQTT 클라이언트 ID를 가져옵니다.
 func GetMQTTClientID() string {
 	if clientID, exists := ConfInfo["MQTTClientID"]; exists {
 		if c, ok := clientID.(string); ok {
@@ -137,7 +130,6 @@ func GetMQTTClientID() string {
 	return "edge-node-mapper" // 기본값
 }
 
-// GetPostgresConfig는 PostgreSQL 설정을 가져옵니다.
 func GetPostgresConfig() (host string, port int, user, password, dbname string) {
 	if hostVal, exists := ConfInfo["DBHost"]; exists {
 		if h, ok := hostVal.(string); ok {
@@ -147,13 +139,24 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 		host = "localhost"
 	}
 
+	// DBPort
 	if portVal, exists := ConfInfo["DBPort"]; exists {
-		// JSON에서는 숫자가 float64로 디코딩될 수 있음
 		switch p := portVal.(type) {
 		case float64:
 			port = int(p)
 		case int:
 			port = p
+		case string:
+			parsedPort, err := strconv.Atoi(p)
+			if err != nil {
+				log.Printf("Invalid DBPort value '%s': %v. Using default port 5432.", p, err)
+				port = 5432 // 기본값 설정
+			} else {
+				port = parsedPort
+			}
+		default:
+			log.Printf("Unexpected type for DBPort: %T. Using default port 5432.", p)
+			port = 5432
 		}
 	} else {
 		port = 5432
@@ -164,7 +167,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 			user = u
 		}
 	} else {
-		user = "yourusername"
+		user = "-"
 	}
 
 	if passwordVal, exists := ConfInfo["DBPassword"]; exists {
@@ -172,7 +175,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 			password = pw
 		}
 	} else {
-		password = "yourpassword"
+		password = "-"
 	}
 
 	if dbnameVal, exists := ConfInfo["DBName"]; exists {
@@ -180,7 +183,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 			dbname = dn
 		}
 	} else {
-		dbname = "yourdbname"
+		dbname = "-"
 	}
 
 	return
