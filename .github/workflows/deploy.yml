@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: "zim-solar-inverter-sp-api"
+      IMAGE_NAME: "zim-solar-inverter-mapper"
       REGISTRY: "44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry"
       NAMESPACE: "edge-test"
       DEPLOYMENT_NAME: "inverter-mapper-deploy"
