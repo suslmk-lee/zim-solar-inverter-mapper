@@ -6,6 +6,6 @@ data:
   DB_HOST: "103.218.158.217"
   DB_PORT: "31432"
   DB_NAME: "cp-db"
-  MQTT_BROKER: "103.218.158.217:30819"
+  MQTT_BROKER: "cp-mosquitto.default.svc.cluster.local:1833"
   MQTT_TOPIC: "iot/data"
   MQTT_CLIENT_ID: "client1"
