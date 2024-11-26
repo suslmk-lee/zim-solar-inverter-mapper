@@ -3,8 +3,8 @@ kind: ConfigMap
 metadata:
   name: zim-converter-mapper-config
 data:
-  DB_HOST: "postgresql-cp.iot-db"
-  DB_PORT: "5432"
+  DB_HOST: "103.218.158.217"
+  DB_PORT: "31432"
   DB_NAME: "cp-db"
   MQTT_BROKER: "103.218.158.217:30819"
   MQTT_TOPIC: "iot/data"
