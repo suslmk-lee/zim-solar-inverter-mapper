@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: inverter-mapper
-          image: 44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry/zim-solar-inverter-mapper:latest
+          image: 44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry/zim-iot-inverter-mapper:latest
           env:
             - name: PROFILE
               value: "prod"
