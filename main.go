@@ -80,7 +80,7 @@ func main() {
 	// MQTT 클라이언트 옵션 설정
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(mqttBroker)
-	opts.SetClientID(clientID)
+	//opts.SetClientID(clientID)
 	//opts.SetCleanSession(true)
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
 		log.Printf("수신한 메시지: %s: %s\n", msg.Topic(), msg.Payload())
