@@ -1,25 +1,18 @@
-name: Build and Deploy to Container Platform Dev Kubernetes(NHN)
+name: Build and Deploy to Kubernetes (K-PaaS)
 
 on:
   push:
     branches:
       - master
-  workflow_dispatch:
-    inputs:
-      usePrimaryRegistry:
-        description: "Use primary registry? (true/false)"
-        required: true
-        default: "true" # 기본값으로 primary registry 사용
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: "zim-solar-inverter-mapper"
-      REGISTRY_PRIMARY: "44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry"
-      REGISTRY_SECONDARY: "223.130.135.99/k-paas"
-      NAMESPACE: "edge-test"
+      IMAGE_NAME: "zim-iot-inverter-mapper"
+      REGISTRY: "44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry"
+      NAMESPACE: "iot-edge"
       DEPLOYMENT_NAME: "inverter-mapper-deploy"
       CLUSTER_NAME: "dev-cluster"
       KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
@@ -33,30 +26,18 @@ jobs:
         with:
           go-version: 1.22
 
-      - name: Determine Registry
-        id: registry
-        run: |
-          if [ "${{ github.event.inputs.usePrimaryRegistry }}" = "true" ]; then
-            echo "REGISTRY=$REGISTRY_PRIMARY" >> $GITHUB_ENV
-            echo "LOGIN_REQUIRED=true" >> $GITHUB_ENV
-          else
-            echo "REGISTRY=$REGISTRY_SECONDARY" >> $GITHUB_ENV
-            echo "LOGIN_REQUIRED=false" >> $GITHUB_ENV
-          fi
-
-      - name: Log in to Container Registry (if required)
-        if: env.LOGIN_REQUIRED == 'true'
+      - name: Log in to Container Registry
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-        run: echo "${REGISTRY_PASSWORD}" | docker login ${{ env.REGISTRY }} -u "${REGISTRY_USERNAME}" --password-stdin
+        run: echo "${REGISTRY_PASSWORD}" | docker login $REGISTRY -u "${REGISTRY_USERNAME}" --password-stdin
 
       - name: Build and Push Docker Image
         env:
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          docker build -t ${{ env.REGISTRY }}/$IMAGE_NAME:latest .
-          docker push ${{ env.REGISTRY }}/$IMAGE_NAME:latest
+          docker build -t $REGISTRY/$IMAGE_NAME:latest .
+          docker push $REGISTRY/$IMAGE_NAME:latest
 
       - name: Set up Kubernetes
         uses: azure/k8s-set-context@v2
@@ -66,6 +47,8 @@ jobs:
 
       - name: Apply Kubernetes Deployment
         run: |
-          kubectl apply -f deployment/secret.yml -n $NAMESPACE
-          kubectl apply -f deployment/configmap.yml -n $NAMESPACE
-          kubectl apply -f deployment/deploy.yml -n $NAMESPACE
+          kubectl apply -f deployment/deploy.yml
+
+      - name: Restart Kubernetes Deployment
+        run: |
+          kubectl rollout restart deployment/$DEPLOYMENT_NAME -n $NAMESPACE
