@@ -92,8 +92,8 @@ func main() {
 	// MQTT 클라이언트 옵션 설정
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s", mqttBroker))
-	opts.SetClientID(clientID)
-	opts.SetCleanSession(false) // 세션 유지
+	//opts.SetClientID(clientID)
+	//opts.SetCleanSession(false) // 세션 유지
 	opts.SetAutoReconnect(true)
 	opts.SetConnectRetry(true)
 	opts.SetConnectRetryInterval(5 * time.Second)
