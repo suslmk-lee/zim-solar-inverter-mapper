@@ -28,7 +28,7 @@ type Status struct {
 	Dyield         float64 `json:"Dyield"`
 	PF             float64 `json:"PF"`
 	Pmax           float64 `json:"Pmax"`
-	Pac            float64 `json:"Pac"`
+	Pac            int     `json:"Pac"`
 	Sac            float64 `json:"Sac"`
 	Uab            float64 `json:"Uab"`
 	Ubc            float64 `json:"Ubc"`
