@@ -52,10 +52,8 @@ func ReadConfigFile(filename string) (AppConfigProperties, error) {
 func LoadConfigFromEnv() AppConfigProperties {
 	conf := AppConfigProperties{}
 
-	// 예시: MQTT 설정
 	if broker := os.Getenv("MQTT_BROKER"); broker != "" {
 		fmt.Println("broker: ", broker)
-		conf["MQTTBroker"] = broker
 	}
 	if topic := os.Getenv("MQTT_TOPIC"); topic != "" {
 		conf["MQTTTopic"] = topic
@@ -64,12 +62,14 @@ func LoadConfigFromEnv() AppConfigProperties {
 		conf["MQTTClientID"] = clientID
 	}
 
-	// PostgreSQL 설정
+	fmt.Println("MQTT Broker: ", conf["MQTTBroker"])
+	fmt.Println("MQTT Topic: ", conf["MQTTTopic"])
+	fmt.Println("MQTT Client ID: ", conf["MQTTClientID"])
+
 	if dbHost := os.Getenv("DB_HOST"); dbHost != "" {
 		conf["DBHost"] = dbHost
 	}
 	if dbPort := os.Getenv("DB_PORT"); dbPort != "" {
-		fmt.Println("dbPort: ", dbPort)
 		conf["DBPort"] = dbPort
 	}
 	if dbUser := os.Getenv("DB_USER"); dbUser != "" {
@@ -106,7 +106,6 @@ func GetAllowedOrigins() []string {
 func GetMQTTBroker() string {
 	if broker, exists := ConfInfo["MQTTBroker"]; exists {
 		if b, ok := broker.(string); ok {
-			fmt.Println("[Local]broker: ", b)
 			return b
 		}
 	}
