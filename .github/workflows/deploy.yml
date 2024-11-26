@@ -18,8 +18,8 @@ jobs:
     env:
       IMAGE_NAME: "zim-solar-inverter-mapper"
       REGISTRY_PRIMARY: "44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry"
-      REGISTRY_SECONDARY: "223.130.135.99/k-paas"
-      NAMESPACE: "edge-test"
+      REGISTRY_SECONDARY: "44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry"
+      NAMESPACE: "iot-edge"
       DEPLOYMENT_NAME: "inverter-mapper-deploy"
       CLUSTER_NAME: "dev-cluster"
       KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
