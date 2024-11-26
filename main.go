@@ -52,7 +52,7 @@ func main() {
 	// 설정 가져오기
 	mqttBroker := config.GetMQTTBroker()
 	mqttTopic := config.GetMQTTTopic()
-	clientID := config.GetMQTTClientID()
+	//clientID := config.GetMQTTClientID()
 
 	dbHost, dbPort, dbUser, dbPassword, dbName := config.GetPostgresConfig()
 
