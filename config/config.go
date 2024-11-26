@@ -53,7 +53,7 @@ func LoadConfigFromEnv() AppConfigProperties {
 	conf := AppConfigProperties{}
 
 	if broker := os.Getenv("MQTT_BROKER"); broker != "" {
-		fmt.Println("broker: ", broker)
+		conf["MQTTBroker"] = broker
 	}
 	if topic := os.Getenv("MQTT_TOPIC"); topic != "" {
 		conf["MQTTTopic"] = topic
