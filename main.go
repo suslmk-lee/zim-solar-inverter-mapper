@@ -4,6 +4,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -90,12 +91,13 @@ func main() {
 
 	// MQTT 클라이언트 옵션 설정
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(mqttBroker)
+	opts.AddBroker(fmt.Sprintf("tcp://%s", mqttBroker))
 	opts.SetClientID(clientID)
-	opts.SetCleanSession(true)
+	opts.SetCleanSession(false) // 세션 유지
 	opts.SetAutoReconnect(true)
 	opts.SetConnectRetry(true)
 	opts.SetConnectRetryInterval(5 * time.Second)
+	opts.SetKeepAlive(60 * time.Second) // KeepAlive 설정
 
 	// 커넥션 핸들러 추가
 	opts.OnConnect = func(client mqtt.Client) {
