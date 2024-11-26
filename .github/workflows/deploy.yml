@@ -3,7 +3,7 @@ name: Build and Deploy to Container Platform Dev Kubernetes(NHN)
 on:
   push:
     branches:
-      - master
+      - dev
   workflow_dispatch:
     inputs:
       usePrimaryRegistry:
