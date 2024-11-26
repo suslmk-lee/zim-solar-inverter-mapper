@@ -98,23 +98,10 @@ func main() {
 	opts.SetConnectRetry(true)
 	opts.SetConnectRetryInterval(5 * time.Second)
 	opts.SetKeepAlive(60 * time.Second) // KeepAlive 설정
-	opts.SetProtocolVersion(4)          // MQTT v3.1.1
-
-	// 로그 레벨 설정 (옵션)
-	// opts.SetLogger(&mqttLogger{})
-
-	// 연결 신호 채널 생성
-	connectedChan := make(chan struct{})
 
 	// 커넥션 핸들러 추가
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Println("MQTT에 성공적으로 연결되었습니다.")
-		// 연결 신호 전송
-		select {
-		case connectedChan <- struct{}{}:
-		default:
-		}
-
 		// 토픽 구독 시도
 		if token := client.Subscribe(mqttTopic, 1, messageHandler(db)); token.Wait() && token.Error() != nil {
 			log.Printf("토픽 구독 실패: %v", token.Error())
@@ -132,20 +119,8 @@ func main() {
 	client := mqtt.NewClient(opts)
 	log.Println("MQTT 클라이언트 생성 완료, 연결 시도 중...")
 
-	// 연결 시도 타임아웃 설정 (10초)
-	go func() {
-		token := client.Connect()
-		if token.Wait() && token.Error() != nil {
-			log.Printf("MQTT 연결 실패: %v", token.Error())
-		}
-	}()
-
-	select {
-	case <-connectedChan:
-		log.Println("MQTT 연결 성공")
-	case <-time.After(10 * time.Second):
-		log.Println("MQTT 연결 시도 타임아웃 (10초 초과)")
-		// 필요한 경우, 재시도 로직 또는 애플리케이션 종료를 추가할 수 있습니다.
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		log.Fatalf("MQTT 연결 실패: %v", token.Error())
 	}
 
 	// 시그널 처리: Graceful Shutdown 구현
