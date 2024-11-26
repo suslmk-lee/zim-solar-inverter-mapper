@@ -1,3 +1,4 @@
+// config/config.go
 package config
 
 import (
@@ -30,6 +31,7 @@ func init() {
 	}
 }
 
+// ReadConfigFile reads configuration from a JSON file
 func ReadConfigFile(filename string) (AppConfigProperties, error) {
 	ConfInfo = AppConfigProperties{}
 
@@ -49,6 +51,7 @@ func ReadConfigFile(filename string) (AppConfigProperties, error) {
 	return ConfInfo, nil
 }
 
+// LoadConfigFromEnv loads configuration from environment variables
 func LoadConfigFromEnv() AppConfigProperties {
 	conf := AppConfigProperties{}
 
@@ -62,10 +65,7 @@ func LoadConfigFromEnv() AppConfigProperties {
 		conf["MQTTClientID"] = clientID
 	}
 
-	fmt.Println("MQTT Broker: ", conf["MQTTBroker"])
-	fmt.Println("MQTT Topic: ", conf["MQTTTopic"])
-	fmt.Println("MQTT Client ID: ", conf["MQTTClientID"])
-
+	// PostgreSQL 설정
 	if dbHost := os.Getenv("DB_HOST"); dbHost != "" {
 		conf["DBHost"] = dbHost
 	}
@@ -85,6 +85,7 @@ func LoadConfigFromEnv() AppConfigProperties {
 	return conf
 }
 
+// GetAllowedOrigins retrieves allowed origins from configuration
 func GetAllowedOrigins() []string {
 	if allowedOriginsInterface, exists := ConfInfo["AllowedOrigins"]; exists {
 		switch v := allowedOriginsInterface.(type) {
@@ -103,6 +104,7 @@ func GetAllowedOrigins() []string {
 	return nil
 }
 
+// GetMQTTBroker retrieves the MQTT broker address
 func GetMQTTBroker() string {
 	if broker, exists := ConfInfo["MQTTBroker"]; exists {
 		if b, ok := broker.(string); ok {
@@ -112,6 +114,7 @@ func GetMQTTBroker() string {
 	return "tcp://localhost:1883" // 기본값
 }
 
+// GetMQTTTopic retrieves the MQTT topic
 func GetMQTTTopic() string {
 	if topic, exists := ConfInfo["MQTTTopic"]; exists {
 		if t, ok := topic.(string); ok {
@@ -121,6 +124,7 @@ func GetMQTTTopic() string {
 	return "iot/data" // 기본값
 }
 
+// GetMQTTClientID retrieves the MQTT client ID
 func GetMQTTClientID() string {
 	if clientID, exists := ConfInfo["MQTTClientID"]; exists {
 		if c, ok := clientID.(string); ok {
@@ -130,7 +134,9 @@ func GetMQTTClientID() string {
 	return "edge-node-mapper" // 기본값
 }
 
+// GetPostgresConfig retrieves PostgreSQL configuration parameters
 func GetPostgresConfig() (host string, port int, user, password, dbname string) {
+	// Host
 	if hostVal, exists := ConfInfo["DBHost"]; exists {
 		if h, ok := hostVal.(string); ok {
 			host = h
@@ -139,7 +145,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 		host = "localhost"
 	}
 
-	// DBPort
+	// Port
 	if portVal, exists := ConfInfo["DBPort"]; exists {
 		switch p := portVal.(type) {
 		case float64:
@@ -162,6 +168,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 		port = 5432
 	}
 
+	// User
 	if userVal, exists := ConfInfo["DBUser"]; exists {
 		if u, ok := userVal.(string); ok {
 			user = u
@@ -170,6 +177,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 		user = "-"
 	}
 
+	// Password
 	if passwordVal, exists := ConfInfo["DBPassword"]; exists {
 		if pw, ok := passwordVal.(string); ok {
 			password = pw
@@ -178,6 +186,7 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 		password = "-"
 	}
 
+	// DBName
 	if dbnameVal, exists := ConfInfo["DBName"]; exists {
 		if dn, ok := dbnameVal.(string); ok {
 			dbname = dn
@@ -187,4 +196,40 @@ func GetPostgresConfig() (host string, port int, user, password, dbname string) 
 	}
 
 	return
+}
+
+// GetPostgresDSN constructs and returns the PostgreSQL DSN string
+func GetPostgresDSN() string {
+	host, port, user, password, dbname := GetPostgresConfig()
+
+	// 검증: 필수 필드가 모두 설정되었는지 확인
+	missing := false
+	if host == "" || host == "-" {
+		log.Println("PostgreSQL host is not set.")
+		missing = true
+	}
+	if port == 0 {
+		log.Println("PostgreSQL port is not set.")
+		missing = true
+	}
+	if user == "" || user == "-" {
+		log.Println("PostgreSQL user is not set.")
+		missing = true
+	}
+	if password == "" || password == "-" {
+		log.Println("PostgreSQL password is not set.")
+		missing = true
+	}
+	if dbname == "" || dbname == "-" {
+		log.Println("PostgreSQL dbname is not set.")
+		missing = true
+	}
+	if missing {
+		log.Fatal("One or more PostgreSQL configuration parameters are missing.")
+	}
+
+	// DSN 문자열 구성
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	return dsn
 }

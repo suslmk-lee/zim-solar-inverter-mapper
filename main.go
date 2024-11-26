@@ -1,10 +1,13 @@
+// main.go
 package main
 
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"zim-solar-inverter-mapper/config"
@@ -49,19 +52,25 @@ type Status struct {
 }
 
 func main() {
+	// 로그 설정
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	log.Println("애플리케이션 시작")
+
 	// 설정 가져오기
 	mqttBroker := config.GetMQTTBroker()
 	mqttTopic := config.GetMQTTTopic()
 	clientID := config.GetMQTTClientID()
 
-	dbHost, dbPort, dbUser, dbPassword, dbName := config.GetPostgresConfig()
+	// PostgreSQL DSN 가져오기
+	psqlInfo := config.GetPostgresDSN()
 
-	// PostgreSQL 연결 문자열 구성
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	fmt.Println(psqlInfo)
+	// 설정 값 로그 (비밀번호는 제외)
+	log.Printf("MQTT Broker: %s", mqttBroker)
+	log.Printf("MQTT Topic: %s", mqttTopic)
+	log.Printf("MQTT Client ID: %s", clientID)
+	log.Println("PostgreSQL DSN: [REDACTED]") // 보안을 위해 실제 DSN은 출력하지 않음
 
 	// 데이터베이스 연결
 	db, err := sql.Open("postgres", psqlInfo)
@@ -69,6 +78,8 @@ func main() {
 		log.Fatalf("PostgreSQL 연결 실패: %v", err)
 	}
 	defer db.Close()
+
+	log.Println("PostgreSQL 연결 시도 중...")
 
 	// 연결 확인
 	err = db.Ping()
@@ -82,19 +93,65 @@ func main() {
 	opts.AddBroker(mqttBroker)
 	opts.SetClientID(clientID)
 	opts.SetCleanSession(true)
-	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("수신한 메시지: %s: %s\n", msg.Topic(), msg.Payload())
+	opts.SetAutoReconnect(true)
+	opts.SetConnectRetry(true)
+	opts.SetConnectRetryInterval(5 * time.Second)
+
+	// 커넥션 핸들러 추가
+	opts.OnConnect = func(client mqtt.Client) {
+		log.Println("MQTT에 성공적으로 연결되었습니다.")
+		// 토픽 구독 시도
+		if token := client.Subscribe(mqttTopic, 1, messageHandler(db)); token.Wait() && token.Error() != nil {
+			log.Printf("토픽 구독 실패: %v", token.Error())
+		} else {
+			log.Printf("토픽 '%s'을(를) 성공적으로 구독했습니다.", mqttTopic)
+		}
+	}
+
+	// 연결 실패 핸들러 추가
+	opts.OnConnectionLost = func(client mqtt.Client, err error) {
+		log.Printf("MQTT 연결이 끊어졌습니다: %v", err)
+	}
+
+	// 클라이언트 생성 및 연결
+	client := mqtt.NewClient(opts)
+	log.Println("MQTT 클라이언트 생성 완료, 연결 시도 중...")
+
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		log.Fatalf("MQTT 연결 실패: %v", token.Error())
+	}
+
+	// 시그널 처리: Graceful Shutdown 구현
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigChan
+		log.Printf("수신한 시그널: %v, 애플리케이션 종료 중...", sig)
+		client.Disconnect(250) // MQTT 클라이언트 종료
+		db.Close()             // 데이터베이스 연결 종료
+		os.Exit(0)
+	}()
+
+	// 애플리케이션이 종료되지 않도록 대기
+	select {}
+}
+
+// messageHandler는 MQTT 메시지를 처리하는 핸들러를 반환합니다.
+func messageHandler(db *sql.DB) mqtt.MessageHandler {
+	return func(client mqtt.Client, msg mqtt.Message) {
+		log.Printf("수신한 메시지 - 토픽: %s, 페이로드: %s", msg.Topic(), string(msg.Payload()))
 
 		var data IoTData
 		err := json.Unmarshal(msg.Payload(), &data)
 		if err != nil {
-			log.Printf("JSON 파싱 오류: %v", err)
+			log.Printf("JSON 파싱 오류: %v, 메시지: %s", err, string(msg.Payload()))
 			return
 		}
 
 		timestamp, err := time.Parse("2006-01-02 15:04:05", data.Timestamp)
 		if err != nil {
-			log.Printf("타임스탬프 파싱 오류: %v", err)
+			log.Printf("타임스탬프 파싱 오류: %v, 타임스탬프: %s", err, data.Timestamp)
 			return
 		}
 
@@ -152,22 +209,5 @@ func main() {
 		}
 
 		log.Println("데이터베이스에 성공적으로 삽입되었습니다.")
-	})
-
-	// 클라이언트 생성 및 연결
-	client := mqtt.NewClient(opts)
-	fmt.Println("MQTT 연결중...", client.IsConnected())
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("MQTT 연결 실패: %v", token.Error())
 	}
-	log.Println("MQTT에 성공적으로 연결되었습니다.")
-
-	// 토픽 구독
-	if token := client.Subscribe(mqttTopic, 1, nil); token.Wait() && token.Error() != nil {
-		log.Fatalf("토픽 구독 실패: %v", token.Error())
-	}
-	log.Printf("토픽 '%s'을(를) 구독 중입니다.\n", mqttTopic)
-
-	// 애플리케이션이 종료되지 않도록 대기
-	select {}
 }
