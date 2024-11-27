@@ -12,6 +12,8 @@ spec:
       labels:
         app: inverter-mapper
     spec:
+      nodeSelector:
+        kubernetes.io/node-role: edge
       containers:
         - name: inverter-mapper
           image: 44ce789b-kr1-registry.container.nhncloud.com/container-platform-registry/zim-iot-inverter-mapper:latest
